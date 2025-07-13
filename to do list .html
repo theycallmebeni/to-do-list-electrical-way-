@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Behnam's EE To-Do Circuit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            font-family: 'Courier New', monospace;
+        }
+        .circuit-line {
+            position: absolute;
+            background: #4fd1c5;
+            height: 2px;
+            z-index: 0;
+        }
+        .circuit-node {
+            width: 10px;
+            height: 10px;
+            background: #f6e05e;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 1;
+        }
+        .circuit-container {
+            position: relative;
+            z-index: 0;
+            opacity: 0.3; /* Semi-transparent to avoid text obstruction */
+        }
+        .circuit-svg {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-200 flex flex-col items-center justify-start p-4">
+<div class="relative w-full max-w-2xl">
+    <!-- Circuit lines and nodes for EE aesthetic -->
+    <div class="circuit-line w-1/2 top-20 left-0"></div>
+    <div class="circuit-line w-1/3 top-24 right-0"></div>
+    <div class="circuit-node top-20 left-1/2"></div>
+    <div class="circuit-node top-24 right-1/3"></div>
+
+    <header class="text-center mb-8 z-10">
+        <h1 class="text-4xl font-bold text-yellow-400">Behnam Zarei's EE To-Do Circuit</h1>
+        <p class="text-lg text-teal-300">Isfahan University of Technology (IUT)</p>
+    </header>
+
+    <!-- Circuit Diagram -->
+    <div class="circuit-container flex justify-center mb-8">
+        <svg class="circuit-svg" width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Wires -->
+            <path d="M50 50 H150 V100 H250 V150 H350" stroke="#4fd1c5" stroke-width="2"/>
+            <path d="M50 150 H100 V200 H200 V250 H300" stroke="#4fd1c5" stroke-width="2"/>
+            <path d="M150 100 V200" stroke="#4fd1c5" stroke-width="2"/>
+            <path d="M250 150 V250" stroke="#4fd1c5" stroke-width="2"/>
+
+            <!-- Resistors -->
+            <rect x="80" y="45" width="40" height="10" fill="#f6e05e"/>
+            <text x="90" y="65" fill="#ffffff" font-size="12">R1</text>
+            <rect x="180" y="145" width="40" height="10" fill="#f6e05e"/>
+            <text x="190" y="165" fill="#ffffff" font-size="12">R2</text>
+
+            <!-- Capacitor -->
+            <path d="M130 95 V105 M140 95 V105" stroke="#f6e05e" stroke-width="4"/>
+            <text x="145" y="105" fill="#ffffff" font-size="12">C1</text>
+
+            <!-- Transistor -->
+            <circle cx="200" cy="100" r="10" fill="#ff6b6b"/>
+            <path d="M200 90 V110 M190 100 H210 M195 95 L205 105" stroke="#ffffff" stroke-width="2"/>
+            <text x="215" y="105" fill="#ffffff" font-size="12">Q1</text>
+
+            <!-- Op-Amp -->
+            <polygon points="280,120 320,120 300,90 300,150" fill="#38b2ac"/>
+            <text x="285" y="135" fill="#ffffff" font-size="12">U1</text>
+            <path d="M280 125 H270 M280 135 H270" stroke="#ffffff" stroke-width="2"/>
+            <path d="M320 130 H330" stroke="#ffffff" stroke-width="2"/>
+
+            <!-- Ground -->
+            <path d="M300 250 V270 M290 270 H310 M292 275 H308 M294 280 H306" stroke="#ffffff" stroke-width="2"/>
+            <text x="315" y="275" fill="#ffffff" font-size="12">GND</text>
+
+            <!-- Power Supply -->
+            <circle cx="50" cy="50" r="8" fill="#ff6b6b"/>
+            <text x="35" y="70" fill="#ffffff" font-size="12">VCC</text>
+        </svg>
+    </div>
+
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full border-2 border-teal-500 z-10">
+        <div class="flex mb-4">
+            <input
+                    id="taskInput"
+                    type="text"
+                    placeholder="Add a new task (e.g., 'Simulate circuit in LTspice')"
+                    class="flex-grow p-2 bg-gray-700 text-white rounded-l-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+            <button
+                    id="addTaskBtn"
+                    class="bg-teal-500 hover:bg-teal-600 text-white p-2 rounded-r-md"
+            >
+                Add Node
+            </button>
+        </div>
+
+        <ul id="taskList" class="space-y-2">
+            <!-- Tasks will be added here dynamically -->
+        </ul>
+    </div>
+
+    <footer class="mt-8 text-center text-gray-400 z-10">
+        <p>Powered by Electrical Engineering Passion ⚡️</p>
+    </footer>
+</div>
+
+<script>
+    const taskInput = document.getElementById('taskInput');
+    const addTaskBtn = document.getElementById('addTaskBtn');
+    const taskList = document.getElementById('taskList');
+
+    // Load tasks from localStorage
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    function saveTasks() {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function renderTasks() {
+        taskList.innerHTML = '';
+        tasks.forEach((task, index) => {
+            const li = document.createElement('li');
+            li.className = 'flex items-center justify-between p-2 bg-gray-700 rounded-md';
+            li.innerHTML = `
+                    <div class="flex items-center">
+                        <input
+                            type="checkbox"
+                            ${task.completed ? 'checked' : ''}
+                            class="mr-2"
+                            onchange="toggleTask(${index})"
+                        >
+                        <span class="${task.completed ? 'line-through text-gray-400' : ''}">
+                            ${task.text}
+                        </span>
+                    </div>
+                    <button
+                        class="text-red-400 hover:text-red-600"
+                        onclick="deleteTask(${index})"
+                    >
+                        Disconnect
+                    </button>
+                `;
+            taskList.appendChild(li);
+        });
+    }
+
+    function addTask() {
+        const taskText = taskInput.value.trim();
+        if (taskText) {
+            tasks.push({ text: taskText, completed: false });
+            taskInput.value = '';
+            saveTasks();
+            renderTasks();
+        }
+    }
+
+    function toggleTask(index) {
+        tasks[index].completed = !tasks[index].completed;
+        saveTasks();
+        renderTasks();
+    }
+
+    function deleteTask(index) {
+        tasks.splice(index, 1);
+        saveTasks();
+        renderTasks();
+    }
+
+    // Event listeners
+    addTaskBtn.addEventListener('click', addTask);
+    taskInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addTask();
+    });
+
+    // Initial render
+    renderTasks();
+</script>
+</body>
+</html>
